@@ -13,8 +13,10 @@ interface Player {
   client: Socket;
   x: number;
   y: number;
+  angle: number;
   currentX: number;
   currentY: number;
+  currentAngle: number;
 }
 
 const players: {[key: string]: Player} = {};
@@ -30,13 +32,23 @@ io.on('connection', client => {
     client,
     x: 100,
     y: 400,
+    angle: 0,
     currentX: 100,
     currentY: 400,
+    currentAngle: 0
   };
 
   client.on("playerMove", position => {
     player.currentX = position[0];
     player.currentY = position[1]
+  })
+  client.on("playerMoveAndRotate", position => {
+    player.currentX = position[0];
+    player.currentY = position[1]
+    player.currentAngle = position[2]
+  })
+  client.on("playerRotate", angle => {
+    player.currentAngle = angle;
   })
 
 
@@ -63,17 +75,30 @@ function gameLoop() {
     const newX = player.currentX;
     const newY = player.currentY;
 
+    const oldAngle = player.angle;
+    const newAngle = player.currentAngle;
+    const didAngleChange = oldAngle !== newAngle;
+
     const deltaX = newX - lastX;
     const deltaY = newY - lastY;
+
     if (deltaX !== 0 || deltaY !== 0) {
       player.x = newX;
       player.y = newY;
-      player.client.broadcast.emit("playerMove", [playerId, deltaX, deltaY])
+      if (didAngleChange) {
+        player.angle = newAngle;
+        player.client.broadcast.emit("playerMoveAndRotate", [playerId, deltaX, deltaY, newAngle])
+      } else {
+        player.client.broadcast.emit("playerMove", [playerId, deltaX, deltaY])
+      }
     }
-
-
+    if (deltaX === 0 && deltaY === 0) {
+      if (didAngleChange) {
+        player.angle = newAngle;
+        player.client.broadcast.emit("playerRotate", [playerId, newAngle])
+      }
+    }
   }
-
 }
 
 
