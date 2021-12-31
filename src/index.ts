@@ -44,6 +44,8 @@ const payloadHeight = 100;
 const map = maps.first_map;
 let payloadX = map.payloadRoute[0].x;
 let payloadY = map.payloadRoute[0].y;
+let payloadDx = 0;
+let payloadDy = 0;
 
 let currentPayloadRoute = 0;
 let playersNearPayload = [];
@@ -54,6 +56,8 @@ io.on('connection', client => {
 
 
   emitPlayerList(client);
+  emitPayloadPosition(client);
+
 
   const player = players[client.id] = {
     client,
@@ -104,17 +108,34 @@ function gameLoop() {
   }
   const delta = performance.now() - lastTime;
 
+  payloadDx = 0;
+  payloadDy = 0;
   playersNearPayload = [];
   for (let playerId in players) {
-    const player = players[playerId];
     handleMovement(playerId);
-    handlePayloadMovement(playerId, delta);
-
+    checkNearByPayloadPlayers(playerId, delta);
   }
+  
+  handlePayloadMovement(delta);
+
   lastTime = performance.now();
 }
 
-function handlePayloadMovement(playerId: string, delta: number) {
+function handlePayloadMovement(delta: number) {
+
+  // TODO: move payload faster when the playersNearPayload array is larger.
+  if (payloadDx) {
+    payloadX += payloadDx *(payloadSpeed / tileSize) * (delta / tileSize);
+    io.emit("payloadMoveX", payloadX);
+  }
+  if (payloadDy) {
+    payloadY+= payloadDy  * (payloadSpeed / tileSize) * (delta / tileSize);
+    io.emit("payloadMoveY", payloadY);
+  }
+
+}
+
+function checkNearByPayloadPlayers(playerId: string, delta: number) {
   const player = players[playerId];
 
   const worldX = payloadX * tileSize - (payloadWidth /2) + (playerSize / 2)
@@ -125,24 +146,21 @@ function handlePayloadMovement(playerId: string, delta: number) {
     const xDistance = Math.abs(player.x - worldX);
     const yDistance = Math.abs(player.y - worldY);
 
-    // this.pushing = false;
+
     if (xDistance <= xRadius && yDistance <= yRadius) {
+      playersNearPayload.push(playerId)
+      const currentRoute = map.payloadRoute[currentPayloadRoute]!;
       const nextRoutePath = map.payloadRoute[currentPayloadRoute + 1]!;
       const xReached = nextRoutePath.x === Math.floor(payloadX);
       const yReached = nextRoutePath.y === Math.floor(payloadY);
-      // this.pushing = true;
       if (xReached && yReached) {
         currentPayloadRoute++;
       }
       if (!xReached) {
-        payloadX += (payloadSpeed / tileSize) * (delta / tileSize);
-        io.emit("payloadMoveX", payloadX);
-        // this.angle = 0;
+        payloadDx = nextRoutePath.x > currentRoute.x ? 1 : -1;
       }
       if (!yReached) {
-        payloadY+= (payloadSpeed / tileSize) * (delta / tileSize);
-        io.emit("payloadMoveY", payloadY);
-        // this.angle = 90;
+        payloadDy = nextRoutePath.y > currentRoute.y ? 1 : -1;
       }
     }
 
@@ -195,9 +213,12 @@ function emitPlayerList(client: Socket) {
       id,
       x: player.x,
       y: player.y,
+      angle: player.angle
     }
   })
   client.emit("playerList", playerList)
 }
-
+function emitPayloadPosition(client: Socket) {
+  client.emit("payloadPosition", {x: payloadX, y: payloadY})
+}
 io.listen(80);
