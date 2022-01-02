@@ -2,10 +2,16 @@ import {Server, Socket} from 'socket.io';
 
 const io = new Server({transports: ["websocket"]});
 
+enum HeroNames {
+  soldier = "soldier",
+}
+
 const heroProperties = {
   soldier: {
+    size: 50,
     maxHealth: 200,
     walkSpeed: 0.5,
+    gunDamage: 5,
   }
 }
 
@@ -25,6 +31,10 @@ interface Player {
   client: Socket;
   x: number;
   y: number;
+
+  hero: HeroNames;
+  health: number;
+  isShooting: boolean
   angle: number;
   currentX: number;
   currentY: number;
@@ -34,7 +44,6 @@ interface Player {
 const players: {[key: string]: Player} = {};
 
 
-const playerSize = 50;
 const tileSize = 50;
 
 const payloadSpeed = 10;
@@ -59,11 +68,14 @@ io.on('connection', client => {
   emitPayloadPosition(client);
 
 
-  const player = players[client.id] = {
+  const player: Player = players[client.id] = {
     client,
     x: 100,
     y: 400,
     angle: 0,
+    hero: HeroNames.soldier,
+    health: heroProperties[HeroNames.soldier].maxHealth,
+    isShooting: false,
     currentX: 100,
     currentY: 400,
     currentAngle: 0
@@ -85,8 +97,13 @@ io.on('connection', client => {
   })
 
 
+  client.on("playerShoot", () => {
+    player.isShooting = true;
+  })
 
-  io.emit("spawnPlayer", {id: client.id,  x: 100, y: 400})
+
+
+  io.emit("spawnPlayer", {id: client.id,  x: player.x, y: player.y, health: player.health})
   
   client.on("disconnect", () => {
     if (players[client.id]) {
@@ -112,6 +129,7 @@ function gameLoop() {
   payloadDy = 0;
   playersNearPayload = [];
   for (let playerId in players) {
+    handleShooting(playerId);
     handleMovement(playerId);
     checkNearByPayloadPlayers(playerId, delta);
   }
@@ -120,6 +138,76 @@ function gameLoop() {
 
   lastTime = performance.now();
 }
+
+function handleShooting(shootingPlayerId: string) {
+  const shootingPlayer = players[shootingPlayerId];
+  if (!shootingPlayer.isShooting) return;
+  shootingPlayer.isShooting = false;
+
+    
+  const xAngle = Math.cos(shootingPlayer.angle)
+  const yAngle = Math.sin(shootingPlayer.angle)
+
+  let lineX = shootingPlayer.x
+  let lineY = shootingPlayer.y
+
+  for (let index = 0; index < 100; index++) {
+
+    lineX += xAngle * 8;
+    lineY += yAngle * 8;
+
+
+
+    for (let enemyId in players) {
+      const enemyPlayer = players[enemyId];
+      if (enemyId === shootingPlayerId) continue;
+      const hero = heroProperties[enemyPlayer.hero];
+      const corners = getPlayerCorners(enemyPlayer.x, enemyPlayer.y, enemyPlayer.angle, hero.size);
+      if (pointInPoly(corners, lineX, lineY)) {
+        enemyPlayer.health -= hero.gunDamage
+        io.emit("playerDamaged", {id: enemyId, health: enemyPlayer.health})
+        return;
+      }
+    }    
+  }
+}
+
+function getPlayerCorners(playerX: number, playerY: number, angle: number, size: number) {
+  const topLeft = GetPointRotated(playerX,playerY, angle, -size/2, -size/2)
+
+  const topRight = GetPointRotated(playerX,playerY, angle, size/2, -size/2)
+
+  const BottomLeft = GetPointRotated(playerX,playerY, angle, -size/2, size/2)
+
+  const BottomRight = GetPointRotated(playerX,playerY, angle, size/2, size/2)
+  return [topLeft, topRight, BottomRight, BottomLeft]
+}
+
+function GetPointRotated(X: number, Y: number, R: number, Xos: number, Yos: number){
+  // Xos, Yos // the coordinates of your center point of rect
+  // R      // the angle you wish to rotate
+  
+  //The rotated position of this corner in world coordinates    
+  var rotatedX = X + (Xos  * Math.cos(R)) - (Yos * Math.sin(R))
+  var rotatedY = Y + (Xos  * Math.sin(R)) + (Yos * Math.cos(R))
+  
+  return {x: rotatedX, y: rotatedY}
+}
+
+function pointInPoly(vertices: any, testX: number, testY: number) {
+  let collision = false;
+
+  const verticesLength = vertices.length;
+
+  for (let i = 0, j = verticesLength - 1; i < verticesLength; j = i++) {
+    if (((vertices[i].y > testY) != (vertices[j].y > testY)) &&
+         (testX < (vertices[j].x - vertices[i].x) * (testY - vertices[i].y) / (vertices[j].y - vertices[i].y) + vertices[i].x))
+      collision = !collision;
+  }
+  return collision;
+}
+
+
 
 function handlePayloadMovement(delta: number) {
 
@@ -137,9 +225,10 @@ function handlePayloadMovement(delta: number) {
 
 function checkNearByPayloadPlayers(playerId: string, delta: number) {
   const player = players[playerId];
+  const hero = heroProperties[player.hero] 
 
-  const worldX = payloadX * tileSize - (payloadWidth /2) + (playerSize / 2)
-  const worldY = payloadY * tileSize - (payloadHeight/2) + (playerSize / 2)
+  const worldX = payloadX * tileSize - (payloadWidth /2) + (hero.size / 2)
+  const worldY = payloadY * tileSize - (payloadHeight/2) + (hero.size / 2)
     const xRadius = 150;
     const yRadius = 120;
     // check if player is near the payload
@@ -187,15 +276,15 @@ function handleMovement(playerId: string) {
     player.y = newY;
     if (didAngleChange) {
       player.angle = newAngle;
-      player.client.broadcast.volatile.emit("playerMoveAndRotate", [playerId, deltaX, deltaY, newAngle])
+      player.client.broadcast.emit("playerMoveAndRotate", [playerId, deltaX, deltaY, newAngle])
     } else {
-      player.client.broadcast.volatile.emit("playerMove", [playerId, deltaX, deltaY])
+      player.client.broadcast.emit("playerMove", [playerId, deltaX, deltaY])
     }
   }
   if (deltaX === 0 && deltaY === 0) {
     if (didAngleChange) {
       player.angle = newAngle;
-      player.client.broadcast.volatile.emit("playerRotate", [playerId, newAngle])
+      player.client.broadcast.emit("playerRotate", [playerId, newAngle])
     }
   }
 }
@@ -213,7 +302,8 @@ function emitPlayerList(client: Socket) {
       id,
       x: player.x,
       y: player.y,
-      angle: player.angle
+      angle: player.angle,
+      health: player.health
     }
   })
   client.emit("playerList", playerList)
