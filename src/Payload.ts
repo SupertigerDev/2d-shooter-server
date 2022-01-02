@@ -3,8 +3,8 @@ import { Player } from "./Player";
 import { Server } from "./Server";
 import IO from 'socket.io'
 
+/** Players must escort the payload to win. */
 export class Payload {
-
   x: number;
   y: number;
   server: Server;

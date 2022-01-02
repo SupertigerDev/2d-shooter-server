@@ -1,21 +1,11 @@
 import IO from "socket.io";
 import { HeroNames } from "./constants/HERO_NAMES";
+import { HERO_PROPERTIES } from "./constants/HERO_PROPERTIES";
 import { firstMap } from "./maps/firstMap";
 import { Map } from "./maps/Map";
 import { Payload } from "./Payload";
 import { Player } from "./Player";
 import { Server } from "./Server";
-
-const heroProperties = {
-  soldier: {
-    size: 50,
-    maxHealth: 200,
-    walkSpeed: 0.5,
-    gunDamage: 5,
-  }
-}
-
-
 
 export class Lobby {
   server: Server;
@@ -49,7 +39,7 @@ export class Lobby {
 
 
   onConnected(client: IO.Socket) {
-    client.emit("overrideHeroProperties", heroProperties)
+    client.emit("overrideHeroProperties", HERO_PROPERTIES)
 
     const player = new Player(this, client, 100, 400, 0, HeroNames.soldier);
     this.emitPlayerList(client);
