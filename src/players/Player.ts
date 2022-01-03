@@ -1,9 +1,9 @@
 import IO from "socket.io";
-import { HeroNames } from "./constants/HERO_NAMES";
-import { Hero, HERO_PROPERTIES } from "./constants/HERO_PROPERTIES";
-import { Lobby } from "./Lobby";
-import { Server } from "./Server";
-import { getPlayerCorners, getTileAtCords, pointInPoly } from "./utils";
+import { HeroNames } from "../constants/HERO_NAMES";
+import { Hero, HERO_PROPERTIES } from "../constants/HERO_PROPERTIES";
+import { Lobby } from "../common/Lobby";
+import { Server } from "../common/Server";
+import { getPlayerCorners, getTileAtCords, pointInPoly } from "../utils";
 
 export class Player {
   client: IO.Socket;

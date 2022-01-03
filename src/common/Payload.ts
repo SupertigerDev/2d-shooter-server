@@ -1,5 +1,5 @@
 import { Lobby } from "./Lobby";
-import { Player } from "./Player";
+import { Player } from "../players/Player";
 import { Server } from "./Server";
 import IO from 'socket.io'
 

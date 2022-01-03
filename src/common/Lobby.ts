@@ -1,10 +1,10 @@
 import IO from "socket.io";
-import { HeroNames } from "./constants/HERO_NAMES";
-import { HERO_PROPERTIES } from "./constants/HERO_PROPERTIES";
-import { firstMap } from "./maps/firstMap";
-import { Map } from "./maps/Map";
+import { HeroNames } from "../constants/HERO_NAMES";
+import { HERO_PROPERTIES } from "../constants/HERO_PROPERTIES";
+import { firstMap } from "../maps/firstMap";
+import { Map } from "../maps/Map";
 import { Payload } from "./Payload";
-import { Player } from "./Player";
+import { Player } from "../players/Player";
 import { Server } from "./Server";
 
 export class Lobby {
