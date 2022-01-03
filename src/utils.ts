@@ -1,4 +1,6 @@
+import { HeroNames } from "./constants/HERO_NAMES";
 import { Map } from "./maps/Map";
+import { SoldierPlayer } from "./players/SoldierPlayer";
 
 export function getTileAtCords(map: Map, x: number, y: number) {
   const tiles = map.tiles;
@@ -6,7 +8,13 @@ export function getTileAtCords(map: Map, x: number, y: number) {
   if (texture === 0) return;
   return tiles?.[texture - 1]
 }
-
+export function HeroPick(hero: HeroNames) {
+  switch (hero) {
+    case HeroNames.soldier: return SoldierPlayer
+    default:
+      throw Error("Invalid Hero")
+  }
+}
 export function getPlayerCorners(playerX: number, playerY: number, angle: number, size: number) {
   const topLeft = GetPointRotated(playerX,playerY, angle, -size/2, -size/2)
 

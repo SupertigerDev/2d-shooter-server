@@ -4,6 +4,7 @@ import { Hero, HERO_PROPERTIES } from "../constants/HERO_PROPERTIES";
 import { Lobby } from "../common/Lobby";
 import { Server } from "../common/Server";
 import { getPlayerCorners, getTileAtCords, pointInPoly } from "../utils";
+import { SoldierPlayer } from "./SoldierPlayer";
 
 export class Player {
   client: IO.Socket;
@@ -13,7 +14,6 @@ export class Player {
   y: number;
   angle: any;
   hero: Hero;
-  isShooting: boolean
   currentX: number;
   currentY: number;
   currentAngle: number;
@@ -22,7 +22,7 @@ export class Player {
   lobby: Lobby
   team: number;
   username: string;
-  constructor(username: string, lobby: Lobby,client: IO.Socket, x: number, y: number, angle: number, hero: HeroNames) {
+  constructor(username: string, lobby: Lobby,client: IO.Socket, x: number, y: number, angle: number) {
     this.username = username;
     this.lobby = lobby;
     this.server = lobby.server;
@@ -34,10 +34,9 @@ export class Player {
     this.y = y;
     this.angle = angle;
 
-    this.hero = HERO_PROPERTIES[hero]
+    this.hero = HERO_PROPERTIES[HeroNames.soldier]
     this.health = this.hero.maxHealth;
 
-    this.isShooting = false;
 
     this.currentX = this.x;
     this.currentY = this.y;
@@ -47,8 +46,12 @@ export class Player {
     client.on("playerMove", data => this.onMove(data, client, this))
     client.on("playerRotate", data => this.onRotate(data, client, this))
     client.on("playerMoveAndRotate", data => this.onMoveAndRotate(data, client, this))
-    client.on("playerShoot", () => this.onShoot(client, this))
 
+  }
+
+  gameLoop(delta: number) {
+    this.handleMovement();
+    this.lobby.payload.handleNearbyPlayer(this);
   }
   handleMovement() {
     const lastX = this.x;
@@ -81,40 +84,7 @@ export class Player {
       }
     }
   }
-  handleShooting() {
-    const map = this.lobby.map;
-    const tileSize = this.server.tileSize
-    if (!this.isShooting) return;
-    this.isShooting = false;
 
-      
-    const xAngle = Math.cos(this.angle)
-    const yAngle = Math.sin(this.angle)
-
-    let lineX = this.x
-    let lineY = this.y
-
-    for (let index = 0; index < 100; index++) {
-
-      lineX += xAngle * 8;
-      lineY += yAngle * 8;
-
-      const tile = getTileAtCords(map, Math.floor(lineX / tileSize), Math.floor(lineY / tileSize))
-
-      if(tile?.collision) break
-
-      for (let enemyId in this.lobby.players) {
-        const enemyPlayer = this.lobby.players[enemyId];
-        if (this.team === enemyPlayer.team) continue;
-        const hero = enemyPlayer.hero
-        const corners = getPlayerCorners(enemyPlayer.x, enemyPlayer.y, enemyPlayer.angle, hero.size);
-        if (pointInPoly(corners, lineX, lineY)) {
-          enemyPlayer.damaged(hero.gunDamage)
-          return;
-        }
-      }    
-    }
-  }
 
 
   damaged(damaged: number) {
@@ -136,9 +106,7 @@ export class Player {
     player.currentY = position[1];
     player.currentAngle = position[2];
   }
-  private onShoot(client: IO.Socket, player: Player) {
-    player.isShooting = true;
-  }
+
 
 
   toJSON(){

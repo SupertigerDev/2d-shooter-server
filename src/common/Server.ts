@@ -7,6 +7,7 @@ export class Server {
   lastTime: null | number;
   lobby: Lobby;
   tileSize: number;
+  loops: number;
   constructor() {
     this.io = new IO.Server({transports: ["websocket"]});
     this.io.listen(80)
@@ -18,6 +19,7 @@ export class Server {
     this.tick = 15 // milliseconds
     this.lastTime = null
     this.gameLoop()
+    this.loops = 0;
   }
   gameLoop() {
     if (!this.lastTime) {
@@ -26,9 +28,15 @@ export class Server {
       return;
     }
     const delta = performance.now() - this.lastTime;
+
+    // const start = performance.now();
     
     this.lobby.gameLoop(delta);
 
+    // if (this.loops % 500 === 0) {
+    //   console.log("Last frame took " + (performance.now() - start) + "ms")
+    // }
+    this.loops++;
     this.lastTime = performance.now();
     setTimeout(this.gameLoop.bind(this), this.tick);
   }

@@ -6,6 +6,8 @@ import { Map } from "../maps/Map";
 import { Payload } from "./Payload";
 import { Player } from "../players/Player";
 import { Server } from "./Server";
+import { HeroPick } from "../utils";
+import { Log } from "./Log";
 
 export class Lobby {
   server: Server;
@@ -35,9 +37,7 @@ export class Lobby {
 
     for (let playerId in this.players) {
       const player = this.players[playerId];
-      player.handleMovement();
-      player.handleShooting();
-      this.payload.handleNearbyPlayer(player);
+      player.gameLoop(deltaTime);
     }
 
     this.payload.handleMovement(deltaTime);
@@ -45,7 +45,9 @@ export class Lobby {
 
 
   addPlayer(username: string, client: IO.Socket) {
-    const player = new Player(username, this, client, 100, 400, 0, HeroNames.soldier);
+    Log.info(username, "has joined the lobby.")
+    const HeroPlayer = HeroPick(HeroNames.soldier);
+    const player = new HeroPlayer(username, this, client, 100, 400, 0);
     if (this.teamOnePlayerIds.length <= this.teamTwoPlayerIds.length) {
       this.teamOnePlayerIds.push(player.id)
       player.team = 1;
@@ -60,6 +62,8 @@ export class Lobby {
 
   removePlayer(id: string) {
     if (!this.players[id]) return;
+    Log.info(this.players[id].username, "has left the lobby.")
+
     delete this.players[id];
     const teamOneIndex = this.teamOnePlayerIds.indexOf(id)
     const teamTwoIndex = this.teamTwoPlayerIds.indexOf(id)
