@@ -20,12 +20,16 @@ export class Player {
   server: Server;
   io: IO.Server;
   lobby: Lobby
-  constructor(lobby: Lobby,client: IO.Socket, x: number, y: number, angle: number, hero: HeroNames) {
+  team: number;
+  username: string;
+  constructor(username: string, lobby: Lobby,client: IO.Socket, x: number, y: number, angle: number, hero: HeroNames) {
+    this.username = username;
     this.lobby = lobby;
     this.server = lobby.server;
     this.io = this.server.io;
     this.client = client;
     this.id = client.id;
+    this.team = -1;
     this.x = x;
     this.y = y;
     this.angle = angle;
@@ -140,10 +144,12 @@ export class Player {
   toJSON(){
     return {
       id: this.id,
+      username: this.username,
       x: this.x,
       y: this.y,
       angle: this.angle,
-      health: this.health
+      health: this.health,
+      team: this.team
     }
   }
 }

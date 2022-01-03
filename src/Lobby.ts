@@ -13,11 +13,17 @@ export class Lobby {
   io: IO.Server
   payload: Payload;
   map: Map
+  teamOnePlayerIds: string[];
+  teamTwoPlayerIds: string[];
   constructor(server: Server) {
     this.server = server;
     this.map = firstMap;
     this.players = {};
-    this.payload = new Payload(this)
+    
+    this.teamOnePlayerIds = [];
+    this.teamTwoPlayerIds = [];
+
+    this.payload = new Payload(this);
     this.io = this.server.io
     this.server.io.on("connection", client => this.onConnected(client))
   }
@@ -38,26 +44,49 @@ export class Lobby {
   }
 
 
+  addPlayer(username: string, client: IO.Socket) {
+    const player = new Player(username, this, client, 100, 400, 0, HeroNames.soldier);
+    if (this.teamOnePlayerIds.length <= this.teamTwoPlayerIds.length) {
+      this.teamOnePlayerIds.push(player.id)
+      player.team = 1;
+    } else {
+      this.teamTwoPlayerIds.push(player.id)
+      player.team = 2;
+    }
+    this.players[client.id] = player
+    this.io.emit("spawnPlayer", player.toJSON())
+    return player;
+  }
+
+  removePlayer(id: string) {
+    if (!this.players[id]) return;
+    delete this.players[id];
+    const teamOneIndex = this.teamOnePlayerIds.indexOf(id)
+    const teamTwoIndex = this.teamTwoPlayerIds.indexOf(id)
+    if (teamOneIndex >= 0) {
+      this.teamOnePlayerIds.splice(teamOneIndex, 1)
+    } else if (teamTwoIndex >= 0) {
+      this.teamTwoPlayerIds.splice(teamTwoIndex, 1)
+    }
+    this.io.emit("playerLeave", id)
+  }
   onConnected(client: IO.Socket) {
+    client.on("setUsername", username => this.onSetUsername(username, client))
+    client.on("disconnect", () => this.onDisconnected(client))
+  }
+  onSetUsername(username: string, client: IO.Socket) {
+    if (username.length >= 50) return;
     client.emit("overrideHeroProperties", HERO_PROPERTIES)
 
-    const player = new Player(this, client, 100, 400, 0, HeroNames.soldier);
     this.emitPlayerList(client);
+    this.addPlayer(username, client);
+
     this.emitPayloadPosition(client);
-
-    this.players[client.id] = player;
-
-    this.io.emit("spawnPlayer", {id: client.id,  x: player.x, y: player.y, health: player.health})
-
-    client.on("disconnect", () => this.onDisconnected(client))
-
   }
   onDisconnected(client: IO.Socket) {
-    if (!this.players[client.id]) return;
-    delete this.players[client.id];
-    this.io.emit("playerLeave", client.id)
-    
+    this.removePlayer(client.id);
   }
+
   emitPlayerList(client: IO.Socket) {
     let playerList: any = Object.keys(this.players);
 
