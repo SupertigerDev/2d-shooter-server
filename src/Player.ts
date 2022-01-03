@@ -105,7 +105,7 @@ export class Player {
 
       for (let enemyId in this.lobby.players) {
         const enemyPlayer = this.lobby.players[enemyId];
-        if (enemyId === this.id) continue;
+        if (this.team === enemyPlayer.team) continue;
         const hero = enemyPlayer.hero
         const corners = getPlayerCorners(enemyPlayer.x, enemyPlayer.y, enemyPlayer.angle, hero.size);
         if (pointInPoly(corners, lineX, lineY)) {
