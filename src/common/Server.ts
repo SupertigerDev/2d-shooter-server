@@ -38,7 +38,7 @@ export class Server {
     // if (this.loops % 500 === 0) {
     //   console.log("Last frame took " + (performance.now() - start) + "ms")
     // }
-    this.loops++;
+    // this.loops++;
     this.lastTime = performance.now();
     setTimeout(this.gameLoop.bind(this), this.tick);
   }
