@@ -2,6 +2,7 @@ import { Lobby } from "./Lobby";
 import { Player } from "../players/Player";
 import { Server } from "./Server";
 import IO from 'socket.io'
+import { ReplayActionType } from "./ReplayManager";
 
 /** Players must escort the payload to win. */
 export class Payload {
@@ -75,10 +76,14 @@ export class Payload {
     if (this.dx) {
       this.x += this.dx *(this.speed / tileSize) * (delta / tileSize);
       this.io.emit("payloadMoveX", this.x);
+      this.lobby.replayManager.addAction(ReplayActionType.PAYLOAD_MOVE_X, this.x);
+
     }
     if (this.dy) {
       this.y+= this.dy  * (this.speed / tileSize) * (delta / tileSize);
       this.io.emit("payloadMoveY", this.y);
+      this.lobby.replayManager.addAction(ReplayActionType.PAYLOAD_MOVE_Y, this.y);
+
     }
   }
   toJSON(){

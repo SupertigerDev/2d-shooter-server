@@ -5,6 +5,8 @@ import { Lobby } from "../common/Lobby";
 import { Server } from "../common/Server";
 import { getPlayerCorners, getTileAtCords, pointInPoly } from "../utils";
 import { SoldierPlayer } from "./SoldierPlayer";
+import { ReplayActionType } from "../common/ReplayManager";
+import { Log } from "../common/Log";
 
 export class Player {
   client: IO.Socket;
@@ -73,14 +75,18 @@ export class Player {
       if (didAngleChange) {
         this.angle = newAngle;
         this.client.broadcast.emit("playerMoveAndRotate", [this.id, deltaX, deltaY, newAngle])
+        this.lobby.replayManager.addAction(ReplayActionType.ROTATE_AND_MOVE, this.id, deltaX, deltaY, newAngle);
       } else {
         this.client.broadcast.emit("playerMove", [this.id, deltaX, deltaY])
+        this.lobby.replayManager.addAction(ReplayActionType.MOVEMENT, this.id, deltaX, deltaY);
+
       }
     }
     if (deltaX === 0 && deltaY === 0) {
       if (didAngleChange) {
         this.angle = newAngle;
         this.client.broadcast.emit("playerRotate", [this.id, newAngle])
+        this.lobby.replayManager.addAction(ReplayActionType.ROTATION, this.id, newAngle);
       }
     }
   }
@@ -93,6 +99,8 @@ export class Player {
       this.health = 0;
     }
     this.io.emit("playerDamaged", {id: this.id, health: this.health})
+    this.lobby.replayManager.addAction(ReplayActionType.PLAYER_DAMAGED, this.id, this.health);
+
   }
   private onMove(position: [number, number], client: IO.Socket, player: Player) {
     player.currentX = position[0];

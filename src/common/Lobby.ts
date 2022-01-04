@@ -8,6 +8,7 @@ import { Player } from "../players/Player";
 import { Server } from "./Server";
 import { HeroPick } from "../utils";
 import { Log } from "./Log";
+import { ReplayManager } from "./ReplayManager";
 
 export class Lobby {
   server: Server;
@@ -17,10 +18,13 @@ export class Lobby {
   map: Map
   teamOnePlayerIds: string[];
   teamTwoPlayerIds: string[];
+  replayManager: ReplayManager;
   constructor(server: Server) {
     this.server = server;
     this.map = firstMap;
     this.players = {};
+
+    this.replayManager = new ReplayManager(this);
     
     this.teamOnePlayerIds = [];
     this.teamTwoPlayerIds = [];
@@ -41,6 +45,8 @@ export class Lobby {
     }
 
     this.payload.handleMovement(deltaTime);
+
+    this.replayManager.nextTick();
   }
 
 
