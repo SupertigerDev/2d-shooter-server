@@ -26,28 +26,29 @@ const colorCodes = {
   BgWhite : "\x1b[47m"
 }
 
-export class Log {
-  static info(...args: any) {
-    console.log(`${colorCodes.FgCyan}[${this.getTime()}] ${colorCodes.FgGreen}[INFO]:${colorCodes.Reset}`, ...args)
-  }
-  static warn(...args: any) {
-    console.log(`${colorCodes.FgCyan}[${this.getTime()}] ${colorCodes.FgYellow}[INFO]:${colorCodes.Reset}`, ...args)
+function getTime() {
+  const date = new Date();
 
-  }
-  static error(...args: any) {
-    console.log(`${colorCodes.FgCyan}[${this.getTime()}] ${colorCodes.FgRed}[INFO]:${colorCodes.Reset}`, ...args)
-  }
+  const hours = numberHandler(date.getHours());
+  const minutes = numberHandler(date.getMinutes());
+  const seconds = numberHandler(date.getSeconds());
 
-  private static getTime() {
-    const date = new Date();
+  return `${hours}:${minutes}:${seconds}`
+}
+function numberHandler(value: number) {
+  return value > 9 ? value : `0${value}`
+}
 
-    const hours = this.numberHandler(date.getHours());
-    const minutes = this.numberHandler(date.getMinutes());
-    const seconds = this.numberHandler(date.getSeconds());
 
-    return `${hours}:${minutes}:${seconds}`
-  }
-  private static numberHandler(value: number) {
-    return value > 9 ? value : `0${value}`
+export const Log = {
+  info(...args: any) {
+    console.log(`${colorCodes.FgCyan}[${getTime()}] ${colorCodes.FgGreen}[INFO]:${colorCodes.Reset}`, ...args)
+  },
+  warn(...args: any) {
+    console.log(`${colorCodes.FgCyan}[${getTime()}] ${colorCodes.FgYellow}[INFO]:${colorCodes.Reset}`, ...args)
+
+  },
+  error(...args: any) {
+    console.log(`${colorCodes.FgCyan}[${getTime()}] ${colorCodes.FgRed}[INFO]:${colorCodes.Reset}`, ...args)
   }
 }

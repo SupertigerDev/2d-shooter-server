@@ -1,5 +1,6 @@
 import IO from 'socket.io';
 import { Lobby } from './Lobby';
+import { Log } from './Log';
 
 export class Server {
   io: IO.Server;
@@ -11,6 +12,7 @@ export class Server {
   constructor() {
     this.io = new IO.Server({transports: ["websocket"]});
     this.io.listen(80)
+    Log.info("Server started on port 80")
 
     this.tileSize = 50;
 
