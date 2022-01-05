@@ -99,12 +99,19 @@ export class Player {
     this.health -= damaged;
     if (this.health <= 0) {
       this.health = 0;
-      Log.info(this.username, "has been killed by", damagedBy.username)
-      const recentActions = this.lobby.replayManager.getRecentActions();
-      this.client.emit("showKillCam", {killedBy: damagedBy.id, recentActions: recentActions})
     }
     this.io.emit("playerDamaged", {id: this.id, health: this.health})
     this.lobby.replayManager.addAction(ReplayActionType.PLAYER_DAMAGED, this.id, this.health);
+
+    if (this.health === 0) {
+      Log.info(this.username, "has been killed by", damagedBy.username)
+      
+      this.client.emit("playerKilled", {playerId: this.id, killerId: damagedBy.id})
+      this.lobby.replayManager.addAction(ReplayActionType.PLAYER_KILLED, this.id, damagedBy.id);
+
+      const recentActions = this.lobby.replayManager.getRecentActions();
+      this.client.emit("showKillCam", {killedBy: damagedBy.id, recentActions: recentActions})
+    }
 
   }
   private onMove(position: [number, number], client: IO.Socket, player: Player) {

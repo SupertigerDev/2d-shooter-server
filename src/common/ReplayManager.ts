@@ -15,10 +15,12 @@ export enum ReplayActionType {
   ROTATE_AND_MOVE = 6,
   //[PLAYER_DAMAGED, playerId, newHealth]
   PLAYER_DAMAGED = 7,
+  //[PLAYER_KILLED, playerId, killerId]
+  PLAYER_KILLED = 8,
   //[PAYLOAD_MOVE_X, x]
-  PAYLOAD_MOVE_X = 8,
+  PAYLOAD_MOVE_X = 9,
   //[PAYLOAD_MOVE_X, y]
-  PAYLOAD_MOVE_Y = 9
+  PAYLOAD_MOVE_Y = 10
 }
 
 export class ReplayManager {
