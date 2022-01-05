@@ -34,11 +34,11 @@ export class ReplayManager {
     // get last 5 seconds of actions
     const latestItemsCount = Math.floor(5000/15);
     const startIndex = this.actionsOnTick.length - 1 - latestItemsCount;
-    const trackPositions = this.trackPositionsUntil(startIndex);
+    const startPositions = this.startPositions(startIndex);
     const actions = this.actionsOnTick.slice(-latestItemsCount);
-    return {trackPositions, actions};
+    return {startPositions, actions};
   }
-  trackPositionsUntil(index: number) {
+  startPositions(index: number) {
     let players: any = {};
     let payload = {x: 0, y: 0}
     for (let x = 0; x < this.actionsOnTick.length; x++) {
