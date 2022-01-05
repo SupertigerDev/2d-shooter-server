@@ -8,7 +8,7 @@ import { Player } from "../players/Player";
 import { Server } from "./Server";
 import { HeroPick } from "../utils";
 import { Log } from "./Log";
-import { ReplayManager } from "./ReplayManager";
+import { ReplayActionType, ReplayManager } from "./ReplayManager";
 
 export class Lobby {
   server: Server;
@@ -63,6 +63,7 @@ export class Lobby {
     }
     this.players[client.id] = player
     this.io.emit("spawnPlayer", player.toJSON())
+    this.replayManager.addAction(ReplayActionType.SPAWN_PLAYER, player.toJSON())
     return player;
   }
 
@@ -79,6 +80,8 @@ export class Lobby {
       this.teamTwoPlayerIds.splice(teamTwoIndex, 1)
     }
     this.io.emit("playerLeave", id)
+    this.replayManager.addAction(ReplayActionType.LEAVE_PLAYER, id);
+
   }
   onConnected(client: IO.Socket) {
     client.on("setUsername", username => this.onSetUsername(username, client))

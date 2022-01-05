@@ -29,6 +29,8 @@ export class Payload {
     this.x = this.lobby.map.payloadRoute[this.currentRouteIndex].x;
     this.y = this.lobby.map.payloadRoute[this.currentRouteIndex].y;
 
+    this.lobby.replayManager.addAction(ReplayActionType.SPAWN_PAYLOAD, this.x, this.y)
+
     this.speed = 10;
 
     this.width = 150;

@@ -5,7 +5,7 @@ import { Lobby } from "../common/Lobby";
 import { Server } from "../common/Server";
 import { getPlayerCorners, getTileAtCords, pointInPoly } from "../utils";
 import { SoldierPlayer } from "./SoldierPlayer";
-import { ReplayActionType } from "../common/ReplayManager";
+import { ReplayActionType, ReplayManager } from "../common/ReplayManager";
 import { Log } from "../common/Log";
 
 export class Player {
@@ -24,6 +24,7 @@ export class Player {
   lobby: Lobby
   team: number;
   username: string;
+  heroId: HeroNames;
   constructor(username: string, lobby: Lobby,client: IO.Socket, x: number, y: number, angle: number) {
     this.username = username;
     this.lobby = lobby;
@@ -36,7 +37,8 @@ export class Player {
     this.y = y;
     this.angle = angle;
 
-    this.hero = HERO_PROPERTIES[HeroNames.soldier]
+    this.heroId = HeroNames.soldier
+    this.hero = HERO_PROPERTIES[this.heroId]
     this.health = this.hero.maxHealth;
 
 
@@ -93,10 +95,13 @@ export class Player {
 
 
 
-  damaged(damaged: number) {
+  damaged(damaged: number, damagedBy: Player) {
     this.health -= damaged;
     if (this.health <= 0) {
       this.health = 0;
+      Log.info(this.username, "has been killed by", damagedBy.username)
+      const recentActions = this.lobby.replayManager.getRecentActions();
+      this.client.emit("showKillCam", {killedBy: damagedBy.id, recentActions: recentActions})
     }
     this.io.emit("playerDamaged", {id: this.id, health: this.health})
     this.lobby.replayManager.addAction(ReplayActionType.PLAYER_DAMAGED, this.id, this.health);
@@ -121,6 +126,7 @@ export class Player {
     return {
       id: this.id,
       username: this.username,
+      heroId: this.heroId,
       x: this.x,
       y: this.y,
       angle: this.angle,

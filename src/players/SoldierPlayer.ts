@@ -12,7 +12,8 @@ export class SoldierPlayer extends Player {
     super(username, lobby,client, x, y, angle)
 
     this.isShooting = false;
-    this.hero = HERO_PROPERTIES[HeroNames.soldier]
+    this.heroId = HeroNames.soldier
+    this.hero = HERO_PROPERTIES[this.heroId]
 
     client.on("playerShoot", () => this.onShoot(client))
   }
@@ -48,7 +49,7 @@ export class SoldierPlayer extends Player {
         const hero = enemyPlayer.hero
         const corners = getPlayerCorners(enemyPlayer.x, enemyPlayer.y, enemyPlayer.angle, hero.size);
         if (pointInPoly(corners, lineX, lineY)) {
-          enemyPlayer.damaged(hero.gunDamage)
+          enemyPlayer.damaged(hero.gunDamage, this)
           return;
         }
       }    
