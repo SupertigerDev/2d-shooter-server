@@ -17,6 +17,11 @@ export class SoldierPlayer extends Player {
 
     client.on("playerShoot", () => this.onShoot(client))
   }
+  
+  private onShoot(client: IO.Socket) {
+    if (this.health === 0) return;
+    this.isShooting = true;
+  }
   gameLoop(delta: number) {
     super.gameLoop(delta);
     this.handleShooting();
@@ -46,6 +51,7 @@ export class SoldierPlayer extends Player {
       for (let enemyId in this.lobby.players) {
         const enemyPlayer = this.lobby.players[enemyId];
         if (this.team === enemyPlayer.team) continue;
+        if (enemyPlayer.health === 0) continue;
         const hero = enemyPlayer.hero
         const corners = getPlayerCorners(enemyPlayer.x, enemyPlayer.y, enemyPlayer.angle, hero.size);
         if (pointInPoly(corners, lineX, lineY)) {
@@ -54,9 +60,5 @@ export class SoldierPlayer extends Player {
         }
       }    
     }
-  }
-
-  private onShoot(client: IO.Socket) {
-    this.isShooting = true;
   }
 }

@@ -25,6 +25,7 @@ export class Player {
   team: number;
   username: string;
   heroId: HeroNames;
+  lastKilledTime: null | number;
   constructor(username: string, lobby: Lobby,client: IO.Socket, x: number, y: number, angle: number) {
     this.username = username;
     this.lobby = lobby;
@@ -40,6 +41,7 @@ export class Player {
     this.heroId = HeroNames.soldier
     this.hero = HERO_PROPERTIES[this.heroId]
     this.health = this.hero.maxHealth;
+    this.lastKilledTime = null;
 
 
     this.currentX = this.x;
@@ -104,24 +106,33 @@ export class Player {
     this.lobby.replayManager.addAction(ReplayActionType.PLAYER_DAMAGED, this.id, this.health);
 
     if (this.health === 0) {
+      this.lastKilledTime = Date.now();
       Log.info(this.username, "has been killed by", damagedBy.username)
       
-      this.client.emit("playerKilled", {playerId: this.id, killerId: damagedBy.id})
+      this.lobby.io.emit("playerKilled", {playerId: this.id, killerId: damagedBy.id})
       this.lobby.replayManager.addAction(ReplayActionType.PLAYER_KILLED, this.id, damagedBy.id);
 
-      const recentActions = this.lobby.replayManager.getRecentActions();
-      this.client.emit("showKillCam", {killedBy: damagedBy.id, recentActions: recentActions})
+      // show kill cam after 1.5 seconds
+      setTimeout(() => {
+        const recentActions = this.lobby.replayManager.getRecentActions();
+        this.client.emit("showKillCam", {killedBy: damagedBy.id, recentActions: recentActions})
+      }, 1500);
+
+      
     }
 
   }
   private onMove(position: [number, number], client: IO.Socket, player: Player) {
+    if (this.health === 0) return;
     player.currentX = position[0];
     player.currentY = position[1];
   }
   private onRotate(angle: number, client: IO.Socket, player: Player) {
+    if (this.health === 0) return;
     player.currentAngle = angle;
   }
   private onMoveAndRotate(position: [number, number, number], client: IO.Socket, player: Player) {
+    if (this.health === 0) return;
     player.currentX = position[0];
     player.currentY = position[1];
     player.currentAngle = position[2];

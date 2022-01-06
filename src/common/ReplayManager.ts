@@ -48,7 +48,7 @@ export class ReplayManager {
       for (let y = 0; y < actions.length; y++) {
         const action = actions[y];
         if (action[0] === ReplayActionType.SPAWN_PLAYER) {
-          players[action[1].id] = action[1];
+          players[action[1].id] = {...action[1]};
         }
         if (action[0] === ReplayActionType.LEAVE_PLAYER) {
           delete players[action[1]]

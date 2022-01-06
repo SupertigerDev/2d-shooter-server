@@ -4,7 +4,7 @@ import { SoldierPlayer } from "./players/SoldierPlayer";
 
 export function getTileAtCords(map: Map, x: number, y: number) {
   const tiles = map.tiles;
-  const texture = map.layout[y][x] || -1;
+  const texture = map.layout[y]?.[x] || -1;
   if (texture === 0) return;
   return tiles?.[texture - 1]
 }
